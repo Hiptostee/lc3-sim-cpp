@@ -42,6 +42,7 @@ inline ControlSignals getAnd() {
   c.ALUK = 1;
   c.LD_REG = true;
   c.LD_CC = true;
+  c.SR1MUX = 1;
   return c;
 }
 
@@ -157,7 +158,7 @@ inline ControlSignals getSt0() {
   c.ADDR2MUX = 2;
   c.GateMARMUX = true;
   c.LD_MAR = true;
-  c.MARMUX = true;
+  c.MARMUX = 1;
   return c;
 }
 
