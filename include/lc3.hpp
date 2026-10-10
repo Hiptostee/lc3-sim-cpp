@@ -20,6 +20,7 @@ public:
   void clock(const ControlSignals& signal);
   void printState() const;
   void loadWord(uint16_t addr, uint16_t value);
+  void readWord(uint16_t addr) const;
   void run();
 
 private:

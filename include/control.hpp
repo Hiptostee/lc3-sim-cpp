@@ -13,6 +13,7 @@ struct ControlSignals {
   bool GateMDR = false;
   bool GateMARMUX = false;
   bool MEM_EN = false;
+  bool R_W = false;
   uint8_t PCMUX = 0;
   uint8_t ADDR1MUX = 0;
   uint8_t ADDR2MUX = 0;

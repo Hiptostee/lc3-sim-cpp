@@ -167,7 +167,7 @@ uint16_t LC3::evaluateBUS(const ControlSignals& signal) {
 void LC3::latchRegisters(const ControlSignals& signal) {
   uint16_t next_PC = evaluatePCMUX(signal);
   uint16_t next_MAR = BUS;
-  uint16_t next_MDR = signal.MEM_EN ? memory[MAR] : BUS;
+  uint16_t next_MDR = (!signal.R_W && signal.MEM_EN) ? memory[MAR] : BUS;
   uint16_t next_IR = BUS;
   uint16_t next_REG = BUS;
   uint16_t next_DR = evaluateDRMUX(signal);
@@ -190,6 +190,10 @@ void LC3::latchRegisters(const ControlSignals& signal) {
 
   if (signal.LD_REG) {
     registers[next_DR] = next_REG;
+  }
+
+  if (signal.MEM_EN && signal.R_W) {
+      memory[MAR] = MDR;
   }
 
   if (signal.LD_CC) {
@@ -307,6 +311,27 @@ void LC3::step() {
         case 0x000F:
           microstate = Microstate::HALT;
           break;
+        case 0x0002:
+          microstate = Microstate::LD0;
+          break;
+        case 0x0006:
+          microstate = Microstate::LDR0;
+          break;
+        case 0x000e:
+          microstate = Microstate::LEA;
+          break;
+        case 0x000A:
+          microstate = Microstate::LDI0;
+          break;
+        case 0x3:
+          microstate = Microstate::ST0;
+          break;
+        case 0x7:
+          microstate = Microstate::STR0;
+          break;
+        case 0xB:
+          microstate = Microstate::STI0;
+          break;
         default:
           throw std::runtime_error("Unsupported opcode");
       }
@@ -332,6 +357,121 @@ void LC3::step() {
       halted = true;
       break;
     }
+    case Microstate::LD0: {
+      clock(Microcode::getLd0());
+      microstate = Microstate::LD1;
+      break;
+    }
+    case Microstate::LD1: {
+      clock(Microcode::getLd1());
+      microstate = Microstate::LD2;
+      break;
+    }
+    case Microstate::LD2: {
+      clock(Microcode::getLd2());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+    case Microstate::LDR0: {
+      clock(Microcode::getLdr0());
+      microstate = Microstate::LDR1;
+      break;
+    }
+    case Microstate::LDR1: {
+      clock(Microcode::getLdr1());
+      microstate = Microstate::LDR2;
+      break;
+    }
+    case Microstate::LDR2: {
+      clock(Microcode::getLdr2());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+    case Microstate::LDI0: {
+      clock(Microcode::getLdi0());
+      microstate = Microstate::LDI1;
+      break;
+    }
+    case Microstate::LDI1: {
+      clock(Microcode::getLdi1());
+      microstate = Microstate::LDI2;
+      break;
+    }
+    case Microstate::LDI2: {
+      clock(Microcode::getLdi2());
+      microstate = Microstate::LDI3;
+      break;
+    }
+    case Microstate::LDI3: {
+      clock(Microcode::getLdi3());
+      microstate = Microstate::LDI4;
+      break;
+    }
+    case Microstate::LDI4: {
+      clock(Microcode::getLdi4());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+    case Microstate::LEA: {
+      clock(Microcode::getLea());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+      case Microstate::ST0: {
+      clock(Microcode::getSt0());
+      microstate = Microstate::ST1;
+      break;
+    }
+    case Microstate::ST1: {
+      clock(Microcode::getSt1());
+      microstate = Microstate::ST2;
+      break;
+    }
+    case Microstate::ST2: {
+      clock(Microcode::getSt2());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+    case Microstate::STR0: {
+      clock(Microcode::getStr0());
+      microstate = Microstate::STR1;
+      break;
+    }
+    case Microstate::STR1: {
+      clock(Microcode::getStr1());
+      microstate = Microstate::STR2;
+      break;
+    }
+    case Microstate::STR2: {
+      clock(Microcode::getStr2());
+      microstate = Microstate::FETCH0;
+      break;
+    }
+    case Microstate::STI0: {
+      clock(Microcode::getSti0());
+      microstate = Microstate::STI1;
+      break;
+    }
+    case Microstate::STI1: {
+      clock(Microcode::getSti1());
+      microstate = Microstate::STI2;
+      break;
+    }
+    case Microstate::STI2: {
+      clock(Microcode::getSti2());
+      microstate = Microstate::STI3;
+      break;
+    }
+    case Microstate::STI3: {
+      clock(Microcode::getSti3());
+      microstate = Microstate::STI4;
+      break;
+    }
+    case Microstate::STI4: {
+      clock(Microcode::getSti4());
+      microstate = Microstate::FETCH0;
+      break;
+    }
   }
 }
 
@@ -339,4 +479,8 @@ void LC3::run() {
   while (!halted) {
     step();
   }
+}
+
+void LC3::readWord(uint16_t addr) const {
+  std::cout << addr << ": " << memory[addr] << std::endl;
 }
